@@ -9,6 +9,16 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        border: 'var(--border)',
+        background: 'var(--background)',
+        foreground: 'var(--foreground)',
+        card: 'var(--card)',
+        'card-foreground': 'var(--card-foreground)',
+        muted: 'var(--muted)',
+        'muted-foreground': 'var(--muted-foreground)',
+        destructive: 'var(--destructive)',
+        input: 'var(--input)',
+        ring: 'var(--ring)',
         primary: {
           50: '#eff6ff',
           100: '#dbeafe',

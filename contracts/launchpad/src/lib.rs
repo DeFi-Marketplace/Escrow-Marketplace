@@ -129,11 +129,8 @@ impl DefiLaunchpad {
 
         let total_cost = amount * sale.price;
 
-        // Transfer payment
-        // For simplicity, using native payment. In production, use a payment token.
         let token_client = defi_token::DefiTokenClient::new(&env, &sale.token);
-        // Buyers would pay with a stablecoin. For now, tokens are being sold.
-        // In a real implementation, you'd use a separate payment token address.
+        token_client.transfer_from(&buyer, &env.current_contract_address(), &total_cost);
 
         sale.sold += amount;
         env.storage().instance().set(&(BytesN::from_array(&env, &[3u8; 32]), sale_id, buyer.clone()), &new_purchased);

@@ -1,25 +1,47 @@
 #![cfg(test)]
 use super::*;
-use soroban_sdk::{testutils::Address as _, Address, Env};
+use defi_token::{DefiToken, DefiTokenClient};
+use soroban_sdk::{testutils::Address as _, Address, Env, String as SorobanString};
 
-fn setup() -> (Env, DefiLendingClient<'static>, Address, Address) {
+fn create_token(env: &Env, admin: &Address) -> Address {
+    let token_id = env.register(DefiToken, ());
+    let token_client = DefiTokenClient::new(env, &token_id);
+    token_client.initialize(
+        admin,
+        &SorobanString::from_str(env, "Test Token"),
+        &SorobanString::from_str(env, "TST"),
+        &7,
+    );
+    token_id
+}
+
+fn setup() -> (Env, DefiLendingClient<'static>, Address, Address, Address, Address) {
     let env = Env::default();
     env.mock_all_auths();
     let contract_id = env.register(DefiLending, ());
+    let contract_addr = contract_id.clone();
     let client = DefiLendingClient::new(&env, &contract_id);
 
     let admin = Address::generate(&env);
-    let token = Address::generate(&env);
+    let user = Address::generate(&env);
+    let token = create_token(&env, &admin);
 
     client.initialize(&admin);
     client.create_market(&token, &8000, &1000);
-    (env, client, admin, token)
+
+    // Mint tokens to user
+    let token_client = DefiTokenClient::new(&env, &token);
+    token_client.mint(&user, &1_000_000_000);
+
+    (env, client, admin, user, token, contract_addr)
 }
 
 #[test]
 fn test_deposit() {
-    let (env, client, admin, token) = setup();
-    let user = Address::generate(&env);
+    let (env, client, _, user, token, contract_addr) = setup();
+    let token_client = DefiTokenClient::new(&env, &token);
+    token_client.approve(&user, &contract_addr, &1000);
+
     client.deposit(&token, &user, &1000);
 
     let position = client.get_user_position(&user, &token);
@@ -30,8 +52,10 @@ fn test_deposit() {
 
 #[test]
 fn test_withdraw() {
-    let (env, client, admin, token) = setup();
-    let user = Address::generate(&env);
+    let (env, client, _, user, token, contract_addr) = setup();
+    let token_client = DefiTokenClient::new(&env, &token);
+    token_client.approve(&user, &contract_addr, &1000);
+
     client.deposit(&token, &user, &1000);
     client.withdraw(&token, &user, &500);
 
@@ -41,8 +65,10 @@ fn test_withdraw() {
 
 #[test]
 fn test_borrow_and_repay() {
-    let (env, client, admin, token) = setup();
-    let user = Address::generate(&env);
+    let (env, client, _, user, token, contract_addr) = setup();
+    let token_client = DefiTokenClient::new(&env, &token);
+    token_client.approve(&user, &contract_addr, &1_000_000_000);
+
     // Deposit collateral
     client.deposit(&token, &user, &10000);
     // Borrow
@@ -62,8 +88,9 @@ fn test_borrow_and_repay() {
 
 #[test]
 fn test_health_factor() {
-    let (env, client, admin, token) = setup();
-    let user = Address::generate(&env);
+    let (env, client, _, user, token, contract_addr) = setup();
+    let token_client = DefiTokenClient::new(&env, &token);
+    token_client.approve(&user, &contract_addr, &1_000_000_000);
 
     let hf = client.get_health_factor(&user, &token);
     assert_eq!(hf, i128::MAX);

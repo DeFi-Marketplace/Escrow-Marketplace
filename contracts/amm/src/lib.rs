@@ -3,7 +3,7 @@ use soroban_sdk::{
     contract, contractimpl, contracttype, Address, BytesN, Env, Map, Vec,
 };
 
-use defi_common::{calculate_k, check_nonnegative_amount, Error, LiquidityPool};
+use defi_common::{check_nonnegative_amount, Error, LiquidityPool};
 
 mod test;
 
@@ -108,7 +108,6 @@ impl DefiAMM {
         };
 
         pool.total_supply += lp_amount;
-        pool.lp_token = env.current_contract_address();
 
         env.storage().instance().set(&pool_id, &pool);
 

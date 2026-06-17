@@ -1,6 +1,6 @@
 #![no_std]
 use soroban_sdk::{
-    contract, contractimpl, contracttype, token, Address, BytesN, Env, String as SorobanString,
+    contract, contractimpl, contracttype, Address, BytesN, Env, String as SorobanString, Symbol,
 };
 
 mod test;
@@ -150,10 +150,15 @@ impl DefiToken {
 }
 
 mod token {
-    use soroban_sdk::{Address, Env};
+    use soroban_sdk::{Address, Env, Symbol};
 
-    const BALANCE_KEY: soroban_sdk::BytesN<32> = soroban_sdk::BytesN::from_array;
-    const TOTAL_SUPPLY_KEY: soroban_sdk::BytesN<32> = soroban_sdk::BytesN::from_array;
+    fn balance_key(addr: &Address) -> (Symbol, Address) {
+        (Symbol::new(&Env::default(), "balance"), addr.clone())
+    }
+
+    fn total_supply_key() -> Symbol {
+        Symbol::new(&Env::default(), "total_supply")
+    }
 
     pub trait TokenInterface {
         fn read_balance(env: &Env, addr: &Address) -> i128;
@@ -166,19 +171,19 @@ mod token {
 
     impl TokenInterface for () {
         fn read_balance(env: &Env, addr: &Address) -> i128 {
-            let key = (BALANCE_KEY(env, &[2u8; 32]), addr.clone());
+            let key = balance_key(addr);
             env.storage().instance().get(&key).unwrap_or(0)
         }
 
         fn receive_balance(env: &Env, addr: &Address, amount: i128) {
-            let key = (BALANCE_KEY(env, &[2u8; 32]), addr.clone());
+            let key = balance_key(addr);
             let balance: i128 = env.storage().instance().get(&key).unwrap_or(0);
             let new_balance = balance.checked_add(amount).expect("overflow");
             env.storage().instance().set(&key, &new_balance);
         }
 
         fn spend_balance(env: &Env, addr: &Address, amount: i128) {
-            let key = (BALANCE_KEY(env, &[2u8; 32]), addr.clone());
+            let key = balance_key(addr);
             let balance: i128 = env.storage().instance().get(&key).unwrap_or(0);
             if balance < amount {
                 panic!("insufficient balance");
@@ -188,22 +193,22 @@ mod token {
         }
 
         fn read_total_supply(env: &Env) -> i128 {
-            env.storage().instance().get(&TOTAL_SUPPLY_KEY(env, &[3u8; 32])).unwrap_or(0)
+            env.storage().instance().get(&total_supply_key()).unwrap_or(0)
         }
 
         fn receive_total_supply(env: &Env, amount: i128) {
-            let supply: i128 = env.storage().instance().get(&TOTAL_SUPPLY_KEY(env, &[3u8; 32])).unwrap_or(0);
+            let supply: i128 = env.storage().instance().get(&total_supply_key()).unwrap_or(0);
             let new_supply = supply.checked_add(amount).expect("overflow");
-            env.storage().instance().set(&TOTAL_SUPPLY_KEY(env, &[3u8; 32]), &new_supply);
+            env.storage().instance().set(&total_supply_key(), &new_supply);
         }
 
         fn spend_total_supply(env: &Env, amount: i128) {
-            let supply: i128 = env.storage().instance().get(&TOTAL_SUPPLY_KEY(env, &[3u8; 32])).unwrap_or(0);
+            let supply: i128 = env.storage().instance().get(&total_supply_key()).unwrap_or(0);
             if supply < amount {
                 panic!("insufficient total supply");
             }
             let new_supply = supply.checked_sub(amount).expect("underflow");
-            env.storage().instance().set(&TOTAL_SUPPLY_KEY(env, &[3u8; 32]), &new_supply);
+            env.storage().instance().set(&total_supply_key(), &new_supply);
         }
     }
 }

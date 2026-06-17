@@ -195,8 +195,8 @@ impl DefiLending {
         caller.require_auth();
         check_nonnegative_amount(amount).unwrap();
 
-        let market: LendingMarket = env.storage().instance().get(&market_token).unwrap();
-        let position: UserPosition = env.storage()
+        let mut market: LendingMarket = env.storage().instance().get(&market_token).unwrap();
+        let mut position: UserPosition = env.storage()
             .instance()
             .get(&(user.clone(), market_token.clone()))
             .unwrap();
@@ -211,6 +211,7 @@ impl DefiLending {
         let debt_scaled = position.borrowed;
         let debt_amount = (debt_scaled * 1000000000000000000) / market.borrow_index;
         let liquidate_amount = core::cmp::min(amount, debt_amount / 2);
+        let repay_scaled = (liquidate_amount * market.borrow_index) / 1000000000000000000;
 
         let token_client = defi_token::DefiTokenClient::new(&env, &market_token);
         token_client.transfer_from(&caller, &env.current_contract_address(), &liquidate_amount);
@@ -219,6 +220,19 @@ impl DefiLending {
         let collateral_to_transfer = (liquidate_amount * 10000) / (market.collateral_factor * 95 / 100);
 
         token_client.transfer(&env.current_contract_address(), &caller, &collateral_to_transfer);
+
+        // Update position
+        position.borrowed -= repay_scaled;
+        let collateral_scaled = (collateral_to_transfer * market.liquidity_index) / 1000000000000000000;
+        position.collateral = position.collateral.saturating_sub(collateral_scaled);
+        position.deposited = position.deposited.saturating_sub(collateral_scaled);
+
+        // Update market
+        market.total_borrows -= liquidate_amount;
+        market.total_deposits -= collateral_to_transfer;
+
+        env.storage().instance().set(&market_token, &market);
+        env.storage().instance().set(&(user.clone(), market_token.clone()), &position);
 
         env.events().publish(("liquidation", caller, user, market_token), (amount, collateral_to_transfer));
     }

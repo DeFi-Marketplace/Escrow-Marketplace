@@ -29,7 +29,7 @@ export class MarketDataService {
     });
 
     if (!pool) return 0;
-    const volume24h = await this.getPoolVolume24h(poolId);
+    const volume24h = await this.getPoolVolume24h(pool.id);
     const tvl = Number(pool.reserveA) + Number(pool.reserveB);
     if (tvl === 0) return 0;
     const dailyFees = volume24h * (pool.feeBps / 10000);
@@ -38,7 +38,14 @@ export class MarketDataService {
 
   async getPoolVolume24h(poolId: string): Promise<number> {
     const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    return 0;
+    const count = await prisma.transaction.count({
+      where: {
+        type: 'swap',
+        createdAt: { gte: dayAgo },
+        tokenId: poolId,
+      },
+    });
+    return count * 1000; // rough estimate
   }
 
   async getLendingApy(tokenId: string): Promise<{ depositApy: number; borrowApy: number }> {

@@ -5,13 +5,14 @@ import { optionalAuth } from '../middleware/auth';
 
 export const swapRouter = Router();
 
-swapRouter.get('/quote', validate(swapQuoteSchema), async (req: Request, res: Response) => {
+swapRouter.post('/quote', validate(swapQuoteSchema), async (req: Request, res: Response) => {
   try {
     const { poolId, tokenIn, amountIn } = req.body;
     const quote = await contractService.getSwapQuote(poolId, amountIn, tokenIn);
     res.json({ success: true, data: quote, timestamp: Date.now() });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Failed to get quote', timestamp: Date.now() });
+    const message = error instanceof Error ? error.message : 'Failed to get quote';
+    res.status(500).json({ success: false, error: message, timestamp: Date.now() });
   }
 });
 
@@ -21,7 +22,8 @@ swapRouter.post('/execute', optionalAuth, validate(swapSchema), async (req: Requ
     const result = { poolId, tokenIn, amountIn, minAmountOut, status: 'simulated' };
     res.json({ success: true, data: result, timestamp: Date.now() });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Swap failed', timestamp: Date.now() });
+    const message = error instanceof Error ? error.message : 'Swap failed';
+    res.status(500).json({ success: false, error: message, timestamp: Date.now() });
   }
 });
 
@@ -34,6 +36,7 @@ swapRouter.get('/pairs', async (_req: Request, res: Response) => {
       timestamp: Date.now(),
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Failed to list pairs', timestamp: Date.now() });
+    const message = error instanceof Error ? error.message : 'Failed to list pairs';
+    res.status(500).json({ success: false, error: message, timestamp: Date.now() });
   }
 });

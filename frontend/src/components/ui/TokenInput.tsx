@@ -3,7 +3,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { TokenSelect } from './TokenSelect';
-import { Input } from './Input';
 
 interface Token {
   address: string;

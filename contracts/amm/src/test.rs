@@ -1,33 +1,54 @@
 #![cfg(test)]
 use super::*;
-use soroban_sdk::{testutils::Address as _, Address, Env, Symbol};
+use defi_token::{DefiToken, DefiTokenClient};
+use soroban_sdk::{testutils::Address as _, Address, Env, String as SorobanString};
 
-fn setup_test() -> (Env, DefiAMMClient<'static>, Address, Address, Address) {
+fn create_token(env: &Env, admin: &Address) -> Address {
+    let token_id = env.register(DefiToken, ());
+    let token_client = DefiTokenClient::new(env, &token_id);
+    token_client.initialize(
+        admin,
+        &SorobanString::from_str(env, "Test Token"),
+        &SorobanString::from_str(env, "TST"),
+        &7,
+    );
+    token_id
+}
+
+fn setup_test() -> (Env, DefiAMMClient<'static>, Address, Address, Address, Address, Address) {
     let env = Env::default();
     env.mock_all_auths();
     let contract_id = env.register(DefiAMM, ());
+    let amm_address = contract_id.clone();
     let client = DefiAMMClient::new(&env, &contract_id);
 
     let admin = Address::generate(&env);
-    let token_a = Address::generate(&env);
-    let token_b = Address::generate(&env);
+    let caller = Address::generate(&env);
+    let token_a = create_token(&env, &admin);
+    let token_b = create_token(&env, &admin);
 
     client.initialize(&admin, &30);
-    (env, client, admin, token_a, token_b)
+
+    // Mint tokens to caller
+    let token_a_client = DefiTokenClient::new(&env, &token_a);
+    let token_b_client = DefiTokenClient::new(&env, &token_b);
+    token_a_client.mint(&caller, &1_000_000_000);
+    token_b_client.mint(&caller, &1_000_000_000);
+
+    (env, client, admin, caller, token_a, token_b, amm_address)
 }
 
 #[test]
 fn test_initialize() {
-    let (env, client, admin, _, _) = setup_test();
+    let (env, client, _, _, _, _, _) = setup_test();
     let pool_id = client.create_pair(&Address::generate(&env), &Address::generate(&env));
-
     client.set_fee(&50);
-    // fee updated successfully
+    let _ = pool_id;
 }
 
 #[test]
 fn test_create_pair() {
-    let (env, client, admin, token_a, token_b) = setup_test();
+    let (env, client, _, _, token_a, token_b, _) = setup_test();
     let pool_id = client.create_pair(&token_a, &token_b);
     let pool = client.get_pool(&pool_id);
 
@@ -39,9 +60,14 @@ fn test_create_pair() {
 
 #[test]
 fn test_add_liquidity() {
-    let (env, client, admin, token_a, token_b) = setup_test();
+    let (env, client, _, caller, token_a, token_b, amm_address) = setup_test();
     let pool_id = client.create_pair(&token_a, &token_b);
-    let caller = Address::generate(&env);
+
+    // Approve AMM contract to spend tokens
+    let token_a_client = DefiTokenClient::new(&env, &token_a);
+    let token_b_client = DefiTokenClient::new(&env, &token_b);
+    token_a_client.approve(&caller, &amm_address, &100_000_000);
+    token_b_client.approve(&caller, &amm_address, &200_000_000);
 
     client.add_liquidity(&pool_id, &caller, &1000, &2000, &0, &0);
     let pool = client.get_pool(&pool_id);
@@ -52,9 +78,13 @@ fn test_add_liquidity() {
 
 #[test]
 fn test_swap() {
-    let (env, client, admin, token_a, token_b) = setup_test();
+    let (env, client, _, caller, token_a, token_b, amm_address) = setup_test();
     let pool_id = client.create_pair(&token_a, &token_b);
-    let caller = Address::generate(&env);
+
+    let token_a_client = DefiTokenClient::new(&env, &token_a);
+    let token_b_client = DefiTokenClient::new(&env, &token_b);
+    token_a_client.approve(&caller, &amm_address, &1_000_000_000);
+    token_b_client.approve(&caller, &amm_address, &2_000_000_000);
 
     client.add_liquidity(&pool_id, &caller, &1000000, &2000000, &0, &0);
 
@@ -68,9 +98,13 @@ fn test_swap() {
 
 #[test]
 fn test_get_amount_out() {
-    let (env, client, admin, token_a, token_b) = setup_test();
+    let (env, client, _, caller, token_a, token_b, amm_address) = setup_test();
     let pool_id = client.create_pair(&token_a, &token_b);
-    let caller = Address::generate(&env);
+
+    let token_a_client = DefiTokenClient::new(&env, &token_a);
+    let token_b_client = DefiTokenClient::new(&env, &token_b);
+    token_a_client.approve(&caller, &amm_address, &1_000_000_000);
+    token_b_client.approve(&caller, &amm_address, &2_000_000_000);
 
     client.add_liquidity(&pool_id, &caller, &1000000, &2000000, &0, &0);
 

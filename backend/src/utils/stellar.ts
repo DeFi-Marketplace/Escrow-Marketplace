@@ -3,12 +3,9 @@ import {
   SorobanRpc,
   TransactionBuilder,
   Networks,
-  Operation,
-  Asset,
   nativeToScVal,
   scValToNative,
   xdr,
-  Address as StellarAddress,
 } from '@stellar/stellar-sdk';
 
 export class StellarClient {
@@ -53,9 +50,11 @@ export class StellarClient {
     args: xdr.ScVal[],
     source?: string,
   ): Promise<SorobanRpc.Api.SimulateTransactionResponse> {
-    const sourceAccount = source
-      ? await this.getAccount(source)
-      : await this.getAccount(this.getAdminPublicKey()!);
+    const pubKey = source ?? this.getAdminPublicKey();
+    if (!pubKey) {
+      throw new Error('No source account available');
+    }
+    const sourceAccount = await this.getAccount(pubKey);
 
     const contract = new SorobanRpc.Contract(contractId);
 
@@ -126,9 +125,7 @@ export class StellarClient {
     throw new Error('Transaction timeout');
   }
 
-  createContractId(wasmHash: string, salt?: string): string {
-    const networkId = this.networkPassphrase;
-    const adminPubKey = this.adminKeypair?.publicKey() || '';
+  createContractId(_wasmHash: string, _salt?: string): string {
     const keypair = Keypair.random();
     return keypair.publicKey();
   }

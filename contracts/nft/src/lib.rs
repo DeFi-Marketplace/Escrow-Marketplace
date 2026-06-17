@@ -3,7 +3,7 @@ use soroban_sdk::{
     contract, contractimpl, contracttype, Address, BytesN, Env, String as SorobanString, Vec,
 };
 
-use defi_common::{check_nonnegative_amount, Error, NFTMetadata};
+use defi_common::NFTMetadata;
 
 mod test;
 
@@ -41,6 +41,7 @@ impl DefiNFT {
         royalty_bps: u32,
     ) -> u32 {
         let admin: Address = env.storage().instance().get(&BytesN::from_array(&env, &[0u8; 32])).unwrap();
+        admin.require_auth();
 
         let token_id: u32 = env.storage().instance().get(&BytesN::from_array(&env, &[3u8; 32])).unwrap();
         let new_token_id = token_id + 1;

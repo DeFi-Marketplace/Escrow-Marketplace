@@ -56,7 +56,7 @@ impl DefiStaking {
             .unwrap_or(UserStake { amount: 0, reward_per_token_paid: 0, rewards_earned: 0 });
 
         // Update rewards
-        user_stake.rewards_earned += Self::earned(&pool, &user_stake);
+        user_stake.rewards_earned += Self::earned(&env, &pool, &user_stake);
         user_stake.reward_per_token_paid = pool.reward_per_token_stored;
         user_stake.amount += amount;
         pool.total_staked += amount;
@@ -85,7 +85,7 @@ impl DefiStaking {
             panic!("insufficient staked amount");
         }
 
-        user_stake.rewards_earned += Self::earned(&pool, &user_stake);
+        user_stake.rewards_earned += Self::earned(&env, &pool, &user_stake);
         user_stake.reward_per_token_paid = pool.reward_per_token_stored;
         user_stake.amount -= amount;
         pool.total_staked -= amount;
@@ -109,7 +109,7 @@ impl DefiStaking {
             .get(&(caller.clone(), pool_id))
             .unwrap();
 
-        user_stake.rewards_earned += Self::earned(&pool, &user_stake);
+        user_stake.rewards_earned += Self::earned(&env, &pool, &user_stake);
         user_stake.reward_per_token_paid = pool.reward_per_token_stored;
 
         let reward_amount = user_stake.rewards_earned;
@@ -127,21 +127,22 @@ impl DefiStaking {
         env.events().publish(("claim_rewards", pool_id, caller), reward_amount);
     }
 
-    fn earned(pool: &StakePool, user: &UserStake) -> i128 {
-        let reward_per_token = Self::reward_per_token(pool);
+    fn earned(env: &Env, pool: &StakePool, user: &UserStake) -> i128 {
+        let reward_per_token = Self::reward_per_token(env, pool);
         let user_reward = user.amount * (reward_per_token - user.reward_per_token_paid);
         user_reward / 1000000000000000000
     }
 
-    fn reward_per_token(pool: &StakePool) -> i128 {
+    fn reward_per_token(env: &Env, pool: &StakePool) -> i128 {
         if pool.total_staked == 0 {
             return pool.reward_per_token_stored;
         }
-        let now = 0; // placeholder - would use env.ledger().timestamp()
-        let time_diff = now as i128 - pool.last_update as i128;
-        if time_diff <= 0 {
+        let now = env.ledger().timestamp() as i128;
+        let last = pool.last_update as i128;
+        if now <= last {
             return pool.reward_per_token_stored;
         }
+        let time_diff = now - last;
         let reward = time_diff * pool.reward_rate * 1000000000000000000 / pool.total_staked;
         pool.reward_per_token_stored + reward
     }
@@ -164,6 +165,6 @@ impl DefiStaking {
             .get(&(user, pool_id))
             .unwrap_or(UserStake { amount: 0, reward_per_token_paid: 0, rewards_earned: 0 });
 
-        user_stake.rewards_earned + Self::earned(&pool, &user_stake)
+        user_stake.rewards_earned + Self::earned(env, &pool, &user_stake)
     }
 }
