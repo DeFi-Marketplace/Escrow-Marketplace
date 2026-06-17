@@ -1,0 +1,22 @@
+[workspace]
+members = [
+    "token",
+    "amm",
+    "lending",
+    "staking",
+    "nft",
+    "marketplace",
+    "launchpad",
+    "common",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["DeFi Marketplace Team"]
+license = "MIT"
+
+[workspace.dependencies]
+soroban-sdk = "21.0.0"
+soroban-auth = "21.0.0"
+stellar-erc20 = { git = "https://github.com/stellar/soroban-examples.git", rev = "v21.0.0" }

@@ -1,0 +1,207 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  address   String   @unique
+  username  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  nfts             NFT[]
+  listings         MarketplaceListing[]
+  bids             Bid[]
+  launchpadBuys    LaunchpadPurchase[]
+  stakingPositions StakingPosition[]
+}
+
+model Token {
+  id          String   @id @default(cuid())
+  contractId  String   @unique
+  name        String
+  symbol      String
+  decimals    Int
+  totalSupply BigInt   @default(0)
+  icon        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  poolsAsA      LiquidityPool[] @relation("TokenA")
+  poolsAsB      LiquidityPool[] @relation("TokenB")
+  lendingMarkets LendingMarket[]
+  stakingPools  StakingPoolStaked[]
+  rewardPools   StakingPoolReward[]
+  launchpadSales LaunchpadSale[]
+}
+
+model LiquidityPool {
+  id          String   @id @default(cuid())
+  poolId      Int      @unique
+  tokenAId    String
+  tokenBId    String
+  reserveA    BigInt   @default(0)
+  reserveB    BigInt   @default(0)
+  lpToken     String
+  totalSupply BigInt   @default(0)
+  feeBps      Int      @default(30)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tokenA Token @relation("TokenA", fields: [tokenAId], references: [id])
+  tokenB Token @relation("TokenB", fields: [tokenBId], references: [id])
+}
+
+model LendingMarket {
+  id              String   @id @default(cuid())
+  tokenId         String   @unique
+  totalDeposits   BigInt   @default(0)
+  totalBorrows    BigInt   @default(0)
+  liquidityIndex  BigInt   @default(1000000000000000000)
+  borrowIndex     BigInt   @default(1000000000000000000)
+  collateralFactor Int     @default(8000)
+  reserveFactor   Int      @default(1000)
+  interestRate    BigInt   @default(50000000000000000)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  token Token @relation(fields: [tokenId], references: [id])
+}
+
+model StakingPool {
+  id             String   @id @default(cuid())
+  poolId         Int      @unique
+  stakingTokenId String
+  rewardTokenId  String
+  totalStaked    BigInt   @default(0)
+  rewardRate     BigInt
+  periodFinish   BigInt
+  apr            Float    @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  stakingToken Token @relation("StakingPoolStaked", fields: [stakingTokenId], references: [id])
+  rewardToken  Token @relation("StakingPoolReward", fields: [rewardTokenId], references: [id])
+}
+
+model StakingPosition {
+  id          String   @id @default(cuid())
+  userId      String
+  poolId      String
+  amount      BigInt   @default(0)
+  rewardsPaid BigInt   @default(0)
+  rewardsEarned BigInt @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+  pool StakingPool @relation(fields: [poolId], references: [id])
+}
+
+model NFT {
+  id          String   @id @default(cuid())
+  contractId  String
+  tokenId     Int
+  ownerId     String
+  name        String
+  description String?
+  uri         String
+  creatorId   String
+  royaltyBps  Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  owner  User   @relation(fields: [ownerId], references: [id])
+  listings MarketplaceListing[]
+
+  @@unique([contractId, tokenId])
+}
+
+model MarketplaceListing {
+  id           String   @id @default(cuid())
+  listingId    Int      @unique
+  sellerId     String
+  nftId        String
+  price        BigInt
+  paymentToken String
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  seller User @relation(fields: [sellerId], references: [id])
+  nft    NFT  @relation(fields: [nftId], references: [id])
+}
+
+model Auction {
+  id            String   @id @default(cuid())
+  auctionId     Int      @unique
+  sellerId      String
+  nftId         String
+  startPrice    BigInt
+  endPrice      BigInt
+  startTime     BigInt
+  endTime       BigInt
+  highestBid    BigInt   @default(0)
+  highestBidder String?
+  paymentToken  String
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  seller User @relation(fields: [sellerId], references: [id])
+}
+
+model Bid {
+  id        String   @id @default(cuid())
+  auctionId String
+  bidderId  String
+  amount    BigInt
+  createdAt DateTime @default(now())
+
+  bidder User @relation(fields: [bidderId], references: [id])
+}
+
+model LaunchpadSale {
+  id             String   @id @default(cuid())
+  saleId         Int      @unique
+  tokenId        String
+  ownerId        String
+  price          BigInt
+  maxSupply      BigInt
+  sold           BigInt   @default(0)
+  startTime      BigInt
+  endTime        BigInt
+  minPerWallet   BigInt
+  maxPerWallet   BigInt
+  whitelistOnly  Boolean  @default(false)
+  finalized      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  token Token @relation(fields: [tokenId], references: [id])
+}
+
+model LaunchpadPurchase {
+  id        String   @id @default(cuid())
+  saleId    String
+  userId    String
+  amount    BigInt
+  claimed   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Transaction {
+  id            String   @id @default(cuid())
+  hash          String   @unique
+  type          String
+  fromAddress   String
+  toAddress     String?
+  amount        BigInt?
+  tokenId       String?
+  status        String   @default("pending")
+  blockNumber   BigInt?
+  timestamp     DateTime @default(now())
+}

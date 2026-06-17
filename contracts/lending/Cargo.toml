@@ -1,0 +1,15 @@
+[package]
+name = "defi-lending"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[dependencies]
+soroban-sdk = { workspace = true }
+defi-common = { path = "../common" }
+defi-token = { path = "../token" }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }

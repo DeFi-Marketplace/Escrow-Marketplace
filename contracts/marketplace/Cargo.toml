@@ -1,0 +1,16 @@
+[package]
+name = "defi-marketplace"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[dependencies]
+soroban-sdk = { workspace = true }
+defi-common = { path = "../common" }
+defi-nft = { path = "../nft" }
+defi-token = { path = "../token" }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }

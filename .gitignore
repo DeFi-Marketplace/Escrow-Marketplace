@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.next/
+*.log
+.env
+.env.local
+.env.*.local
+.DS_Store
+*.swp
+*.swo
+coverage/
+.cache/
+target/
+**/*.rs.bk
+*.wasm
+.wormhole/
