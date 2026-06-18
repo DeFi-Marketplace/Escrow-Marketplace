@@ -1,5 +1,5 @@
 #![no_std]
-use soroban_sdk::{contracterror, contracttype, Address, Bytes, Vec};
+use soroban_sdk::{contracterror, contracttype, Address, Bytes};
 
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
