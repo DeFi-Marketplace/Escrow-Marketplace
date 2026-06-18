@@ -21,10 +21,10 @@ marketplaceRouter.get('/listings', async (req: Request, res: Response) => {
 
 marketplaceRouter.post('/list', optionalAuth, validate(createListingSchema), async (req: Request, res: Response) => {
   try {
-    const { tokenAddress, tokenId, price, paymentToken } = req.body;
+    const { tokenAddress, tokenId, price } = req.body;
     res.json({
       success: true,
-      data: { tokenAddress, tokenId, price, paymentToken, status: 'simulated' },
+      data: { tokenAddress, tokenId, price, status: 'simulated' },
       timestamp: Date.now(),
     });
   } catch (error) {
@@ -66,7 +66,7 @@ marketplaceRouter.get('/auctions', async (req: Request, res: Response) => {
 
 marketplaceRouter.post('/create-auction', optionalAuth, validate(createAuctionSchema), async (req: Request, res: Response) => {
   try {
-    const { tokenAddress, tokenId, startPrice, reservePrice, duration, paymentToken } = req.body;
+    const { tokenAddress, tokenId, startPrice, reservePrice, duration } = req.body;
     res.json({
       success: true,
       data: { tokenAddress, tokenId, startPrice, reservePrice, duration, status: 'simulated' },

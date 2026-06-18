@@ -6,6 +6,7 @@ import {
   nativeToScVal,
   scValToNative,
   xdr,
+  Contract,
 } from '@stellar/stellar-sdk';
 
 export class StellarClient {
@@ -56,7 +57,7 @@ export class StellarClient {
     }
     const sourceAccount = await this.getAccount(pubKey);
 
-    const contract = new SorobanRpc.Contract(contractId);
+    const contract = new Contract(contractId);
 
     const tx = new TransactionBuilder(sourceAccount, {
       fee: '100',
@@ -84,7 +85,7 @@ export class StellarClient {
     }
 
     const sourceAccount = await this.getAccount(keypair.publicKey());
-    const contract = new SorobanRpc.Contract(contractId);
+    const contract = new Contract(contractId);
 
     const tx = new TransactionBuilder(sourceAccount, {
       fee: '100',
@@ -99,7 +100,7 @@ export class StellarClient {
       throw new Error('Simulation failed');
     }
 
-    const preparedTx = SorobanRpc.assembleTransaction(tx, simulated);
+    const preparedTx = this.prepareTransaction(tx, simulated);
     preparedTx.sign(keypair);
 
     const result = await this.server.sendTransaction(preparedTx);
@@ -109,6 +110,13 @@ export class StellarClient {
     }
 
     throw new Error(`Transaction failed: ${result.errorResult?.result().switch()}`);
+  }
+
+  private prepareTransaction(
+    raw: Awaited<ReturnType<typeof TransactionBuilder.prototype.build>>,
+    simulation: SorobanRpc.Api.SimulateTransactionResponse,
+  ) {
+    return SorobanRpc.assembleTransaction(raw, simulation).build();
   }
 
   private async pollTransaction(

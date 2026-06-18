@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 
+/* eslint-disable @typescript-eslint/no-namespace */
 declare global {
   namespace Express {
     interface Request {
@@ -10,8 +11,6 @@ declare global {
 
 export function validateWalletSignature(req: Request, res: Response, next: NextFunction) {
   const address = req.headers['x-wallet-address'] as string;
-  const signature = req.headers['x-wallet-signature'] as string;
-  const timestamp = req.headers['x-timestamp'] as string;
 
   if (!address) {
     return res.status(401).json({

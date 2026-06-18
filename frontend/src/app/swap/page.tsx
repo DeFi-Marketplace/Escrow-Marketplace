@@ -5,7 +5,14 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { TokenInput } from '@/components/ui/TokenInput';
 import { Button } from '@/components/ui/Button';
 
-const DEMO_TOKENS = [
+interface Token {
+  address: string;
+  symbol: string;
+  name: string;
+  balance?: string;
+}
+
+const DEMO_TOKENS: Token[] = [
   { address: 'native', symbol: 'XLM', name: 'Stellar Lumens', balance: '1000' },
   { address: 'usdc', symbol: 'USDC', name: 'USD Coin', balance: '5000' },
   { address: 'defi', symbol: 'DEFI', name: 'DeFi Token', balance: '10000' },
@@ -13,8 +20,8 @@ const DEMO_TOKENS = [
 ];
 
 export default function SwapPage() {
-  const [sellToken, setSellToken] = useState(DEMO_TOKENS[0]);
-  const [buyToken, setBuyToken] = useState(DEMO_TOKENS[1]);
+  const [sellToken, setSellToken] = useState<Token>(DEMO_TOKENS[0]);
+  const [buyToken, setBuyToken] = useState<Token>(DEMO_TOKENS[1]);
   const [sellAmount, setSellAmount] = useState('');
   const [buyAmount, setBuyAmount] = useState('');
 
@@ -26,6 +33,14 @@ export default function SwapPage() {
     } else {
       setBuyAmount('');
     }
+  };
+
+  const handleSellTokenSelect = (token: Token) => {
+    setSellToken(token);
+  };
+
+  const handleBuyTokenSelect = (token: Token) => {
+    setBuyToken(token);
   };
 
   const handleSwapTokens = () => {
@@ -47,7 +62,7 @@ export default function SwapPage() {
             label="You sell"
             tokens={DEMO_TOKENS}
             selectedToken={sellToken}
-            onTokenSelect={setSellToken}
+            onTokenSelect={handleSellTokenSelect}
             value={sellAmount}
             onChange={handleSellAmountChange}
             showMaxButton
@@ -69,7 +84,7 @@ export default function SwapPage() {
             label="You buy"
             tokens={DEMO_TOKENS}
             selectedToken={buyToken}
-            onTokenSelect={setBuyToken}
+            onTokenSelect={handleBuyTokenSelect}
             value={buyAmount}
             onChange={setBuyAmount}
             usdValue={buyAmount ? (parseFloat(buyAmount) * 1.1).toFixed(2) : undefined}

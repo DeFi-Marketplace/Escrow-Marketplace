@@ -20,7 +20,7 @@ launchpadRouter.get('/sales', async (req: Request, res: Response) => {
 
 launchpadRouter.post('/create', optionalAuth, async (req: Request, res: Response) => {
   try {
-    const { token, price, maxSupply, startTime, endTime, minPerWallet, maxPerWallet } = req.body;
+    const { token, price, maxSupply, startTime, endTime } = req.body;
     res.json({
       success: true,
       data: { token, price, maxSupply, startTime, endTime, status: 'simulated' },
