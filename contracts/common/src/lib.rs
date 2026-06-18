@@ -1,5 +1,5 @@
 #![no_std]
-use soroban_sdk::{contracterror, contracttype, Address, Env, Vec};
+use soroban_sdk::{contracterror, contracttype, Address, Bytes, Vec};
 
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
@@ -95,9 +95,9 @@ pub struct UserStake {
 
 #[contracttype]
 pub struct NFTMetadata {
-    pub name: Vec<u8>,
-    pub description: Vec<u8>,
-    pub uri: Vec<u8>,
+    pub name: Bytes,
+    pub description: Bytes,
+    pub uri: Bytes,
     pub creator: Address,
     pub royalty_bps: u32,
 }

@@ -1,6 +1,6 @@
 #![no_std]
 use soroban_sdk::{
-    contract, contractimpl, contracttype, Address, BytesN, Env, String as SorobanString, Vec,
+    contract, contractimpl, contracttype, Address, Bytes, BytesN, Env, String as SorobanString, Vec,
 };
 
 use defi_common::NFTMetadata;
@@ -35,9 +35,9 @@ impl DefiNFT {
     pub fn mint(
         env: Env,
         to: Address,
-        uri: Vec<u8>,
-        name: Vec<u8>,
-        description: Vec<u8>,
+        uri: Bytes,
+        name: Bytes,
+        description: Bytes,
         royalty_bps: u32,
     ) -> u32 {
         let admin: Address = env.storage().instance().get(&BytesN::from_array(&env, &[0u8; 32])).unwrap();
@@ -138,7 +138,7 @@ impl DefiNFT {
         nft.owner
     }
 
-    pub fn token_uri(env: &Env, token_id: u32) -> Vec<u8> {
+    pub fn token_uri(env: &Env, token_id: u32) -> Bytes {
         let nft: NFTData = env.storage().instance().get(&token_id).unwrap();
         nft.metadata.uri
     }

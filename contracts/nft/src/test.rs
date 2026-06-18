@@ -1,6 +1,6 @@
 #![cfg(test)]
 use super::*;
-use soroban_sdk::{testutils::Address as _, Address, BytesN, Env, String as SorobanString, Vec};
+use soroban_sdk::{testutils::Address as _, Address, Bytes, BytesN, Env, String as SorobanString, Vec};
 
 fn setup() -> (Env, DefiNFTClient<'static>, Address) {
     let env = Env::default();
@@ -18,9 +18,9 @@ fn test_mint() {
     let (env, client, admin) = setup();
     let user = Address::generate(&env);
 
-    let uri = Vec::from_array(&env, [104, 116, 116, 112]); // "http"
-    let name = Vec::from_array(&env, [78, 70, 84, 49]); // "NFT1"
-    let desc = Vec::from_array(&env, [97, 32, 110, 102, 116]); // "a nft"
+    let uri = Bytes::from_array(&env, &[104, 116, 116, 112]); // "http"
+    let name = Bytes::from_array(&env, &[78, 70, 84, 49]); // "NFT1"
+    let desc = Bytes::from_array(&env, &[97, 32, 110, 102, 116]); // "a nft"
 
     let token_id = client.mint(&user, &uri, &name, &desc, &500);
     assert_eq!(token_id, 1);
@@ -37,9 +37,9 @@ fn test_transfer() {
     let alice = Address::generate(&env);
     let bob = Address::generate(&env);
 
-    let uri = Vec::new(&env);
-    let name = Vec::new(&env);
-    let desc = Vec::new(&env);
+    let uri = Bytes::new(&env);
+    let name = Bytes::new(&env);
+    let desc = Bytes::new(&env);
 
     let token_id = client.mint(&alice, &uri, &name, &desc, &0);
     client.transfer(&alice, &bob, &token_id);
@@ -53,9 +53,9 @@ fn test_tokens_of() {
     let user = Address::generate(&env);
 
     let empty = Vec::new(&env);
-    let uri = Vec::new(&env);
-    let name = Vec::new(&env);
-    let desc = Vec::new(&env);
+    let uri = Bytes::new(&env);
+    let name = Bytes::new(&env);
+    let desc = Bytes::new(&env);
 
     client.mint(&user, &uri, &name, &desc, &0);
     client.mint(&user, &uri, &name, &desc, &0);
